@@ -7,7 +7,7 @@
 
 #include <cstdint>
 #include "if_ether.h"
-#include "netdevice.h"
+#include "Netdevice.h"
 
 #define ARP_ETHERNET    0x0001
 #define ARP_IPV4        0x0800
@@ -32,16 +32,16 @@ struct arp_hdr
 
 struct arp_ipv4
 {
-    unsigned char smac[6];
+    std::array<unsigned char,6> smac;
     uint32_t sip;
-    unsigned char dmac[6];
+    std::array<unsigned char,6> dmac;
     uint32_t dip;
 } __attribute__((packed));
 
 struct arp_cache_entry{
     uint16_t hwtype;
     uint32_t sip;
-    unsigned char smac[6];
+    std::array<unsigned char,6> smac;
     unsigned int state;
 };
 
@@ -49,13 +49,15 @@ struct arp_cache_entry{
 class ArpManager {
 private:
     arp_cache_entry arp_cache_table[ARP_CACHE_LEN];
+    Netdevice &dev;
 
-    void arpIncoming(eth_hdr *framehdr, netdevice &dev);
-    void mergeOrInsert(arp_ipv4 *data,uint16_t hwtype);
-    void arpReply(netdevice *netdev, eth_hdr *hdr, arp_hdr *arphdr);
+
+    void mergeOrInsert(arp_ipv4 *,uint16_t);
+    void arpReply(arp_hdr *arphdr);
 
 public:
-    ArpManager();
+    ArpManager(Netdevice&);
+    void arpIncoming(eth_hdr *framehdr);
 };
 
 

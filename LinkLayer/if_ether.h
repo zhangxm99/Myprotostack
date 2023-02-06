@@ -5,11 +5,14 @@
 #ifndef MYTCPIP_IF_ETHER_H
 #define MYTCPIP_IF_ETHER_H
 #include <cstdint>
+#include <array>
+
+#define ETH_P_ARP 0x0806
 
 //frame header
 struct eth_hdr{
-    unsigned char dmac[6];
-    unsigned char smac[6];
+    std::array<unsigned char,6> dmac;
+    std::array<unsigned char,6> smac;
     uint16_t ethertype;
     unsigned char payload[];
 } __attribute__((packed));
