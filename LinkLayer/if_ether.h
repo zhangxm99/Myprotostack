@@ -8,11 +8,14 @@
 #include <array>
 
 #define ETH_P_ARP 0x0806
+#define ETH_P_IP 0x0800
+
+using MAC_t = std::array<unsigned char,6>;
 
 //frame header
 struct eth_hdr{
-    std::array<unsigned char,6> dmac;
-    std::array<unsigned char,6> smac;
+    MAC_t dmac;
+    MAC_t smac;
     uint16_t ethertype;
     unsigned char payload[];
 } __attribute__((packed));

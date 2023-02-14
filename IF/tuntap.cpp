@@ -34,8 +34,9 @@ Tuntap::Tuntap() {
 
     set_if_up();
     set_if_route();
+    set_if_addr();
 
-    printf("virtual interface name is tap0,ip address is 10.0.0.0/24\n");
+    printf("virtual interface name is tap0,flow route to this dev is 10.0.0.0/24\n");
 
 }
 
@@ -61,6 +62,13 @@ inline void Tuntap::set_if_up() {
 inline void Tuntap::set_if_route() {
     if(system("ip route add dev tap0 10.0.0.0/24") != 0){
         fputs("Can't set route for tap0\n",stderr);
+        exit(1);
+    }
+}
+
+inline void Tuntap::set_if_addr() {
+    if(system("ip address add dev tap0 local 10.0.0.5/24") != 0){
+        fputs("Can't set address for tap0\n",stderr);
         exit(1);
     }
 }

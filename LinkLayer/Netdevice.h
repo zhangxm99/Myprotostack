@@ -9,23 +9,28 @@
 #include <array>
 #include "if_ether.h"
 #include "../IF/tuntap.h"
-#include <vector>
+#include <mutex>
 
-#define ETHERMTU 1500
+#define ETHERMTU 1514
 
 
 
 class Netdevice {
 private:
     Tuntap iface;
-    char buf[ETHERMTU];
+    char readBuf[ETHERMTU];
+    char writeBuf[ETHERMTU];
+    mutex writeLock;
+
 public:
     uint32_t inet4;
-    std::array<unsigned char,6> hwaddr;
+    array<unsigned char, 6> hwaddr;
 
     Netdevice(char *addr, char *hwaddr);
-    void transmit(std::array<unsigned char,6> dst, uint16_t ethertype, int payloadlen);
+    void transmit(MAC_t dst, uint16_t ethertype, unsigned char *payload,int payloadlen);
     eth_hdr* receive();
+
+
 };
 
 

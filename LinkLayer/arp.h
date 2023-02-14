@@ -32,16 +32,16 @@ struct arp_hdr
 
 struct arp_ipv4
 {
-    std::array<unsigned char,6> smac;
+    MAC_t smac;
     uint32_t sip;
-    std::array<unsigned char,6> dmac;
+    MAC_t dmac;
     uint32_t dip;
 } __attribute__((packed));
 
 struct arp_cache_entry{
     uint16_t hwtype;
     uint32_t sip;
-    std::array<unsigned char,6> smac;
+    MAC_t smac;
     unsigned int state;
 };
 
@@ -50,14 +50,19 @@ class ArpManager {
 private:
     arp_cache_entry arp_cache_table[ARP_CACHE_LEN];
     Netdevice &dev;
+    mutex buf_lock; //prevent conflict of arpreply and arprequest
+    unsigned char buf[ETHERMTU];
 
+    void arpRequest(uint32_t);
+    void mergeOrInsert(const arp_ipv4 *,uint16_t);
+    void arpReply();
 
-    void mergeOrInsert(arp_ipv4 *,uint16_t);
-    void arpReply(arp_hdr *arphdr);
 
 public:
     ArpManager(Netdevice&);
-    void arpIncoming(eth_hdr *framehdr);
+    void arpIncoming(arp_hdr *framehdr);
+    MAC_t searchMAC(uint32_t ip);
+
 };
 
 

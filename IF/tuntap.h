@@ -14,6 +14,7 @@ private:
     int fd;
     void set_if_route();
     void set_if_up();
+    void set_if_addr();
 
 
 public:

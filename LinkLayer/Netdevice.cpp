@@ -6,9 +6,11 @@
 #include <arpa/inet.h>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include "if_ether.h"
 
-Netdevice::Netdevice(char *addr, char *mac):iface(),inet4(), hwaddr(),buf{} {
+
+Netdevice::Netdevice(char *addr, char *mac): iface(), readBuf{},writeLock() {
     if(inet_pton(AF_INET,addr,&inet4) != 1){
         fputs("failed to bind the ip address",stderr);
         exit(1);
@@ -23,17 +25,21 @@ Netdevice::Netdevice(char *addr, char *mac):iface(),inet4(), hwaddr(),buf{} {
 }
 
 eth_hdr* Netdevice::receive() {
-    iface.tun_read(buf,ETHERMTU);
-    return (eth_hdr *)(buf);
+    iface.tun_read(readBuf, ETHERMTU);
+    return (eth_hdr *)(readBuf);
 }
 
-void Netdevice::transmit(std::array<unsigned char, 6> dst, uint16_t ethertype, int payloadlen) {
-    ((eth_hdr*)&buf)->ethertype = htons(ethertype);
-    ((eth_hdr*)&buf)->smac = hwaddr;
-    ((eth_hdr*)&buf)->dmac = dst;
+void Netdevice::transmit(std::array<unsigned char, 6> dst, uint16_t ethertype, unsigned char *payload, int payloadlen) {
+    writeLock.lock();
+    ((eth_hdr*)&writeBuf)->ethertype = htons(ethertype);
+    ((eth_hdr*)&writeBuf)->smac = hwaddr;
+    ((eth_hdr*)&writeBuf)->dmac = dst;
+
+    memcpy(((eth_hdr*)&writeBuf)->payload,payload,payloadlen);
 
     int len = payloadlen + sizeof(eth_hdr);
 
-    iface.tun_write(buf,len);
+    iface.tun_write(writeBuf, len);
+    writeLock.unlock();
 }
 
