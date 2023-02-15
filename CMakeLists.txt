@@ -3,4 +3,9 @@ project(Mytcpip)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(Mytcpip main.cpp IF/tuntap.cpp LinkLayer/arp.cpp LinkLayer/Netdevice.cpp LinkLayer/EtherManager.cpp LinkLayer/EtherManager.h NetworkLayer/IPDevice.cpp NetworkLayer/IPDevice.h NetworkLayer/ipv4_hdr.h NetworkLayer/ICMPManager.cpp NetworkLayer/ICMPManager.h NetworkLayer/IPManager.cpp NetworkLayer/IPManager.h)
+aux_source_directory(IF IF)
+aux_source_directory(LinkLayer LK)
+aux_source_directory(NetworkLayer NW)
+aux_source_directory(TransportLayer TP)
+
+add_executable(Mytcpip main.cpp ${IF} ${LK} ${NW} ${TP})
