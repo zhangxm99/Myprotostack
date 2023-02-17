@@ -48,7 +48,7 @@ int IPDevice::transmit(uint32_t addr, uint8_t proto, uint8_t tos, char *payload,
     ipHdr->ttl = 64;
     ipHdr->id = 0;
     /*
-     * beacause of the different implement of bit field order by compiler,
+     * because of the different implement of bit field order by compiler,
      * here using pointer method set flag = 0b010, frag_offset = 0,
      * which means no slicing the IP packet
      */
@@ -59,13 +59,12 @@ int IPDevice::transmit(uint32_t addr, uint8_t proto, uint8_t tos, char *payload,
     ipHdr->csum = checksum(ipHdr,ipHdr->ihl*4);
 
     memcpy(((ip_hdr*)&writeBuf[0])->data,payload,len);
-    int res = ethMgr.ip_write(addr,writeBuf);
+    int res = ethMgr.ip_write(addr,(ip_hdr*)&writeBuf[0]);
 
     write_lock.unlock();
     return res;
 }
 
-ip_hdr* IPDevice::receive() {
-    readBuf = ethMgr.ip_read();
-    return (ip_hdr*)&readBuf;
+DataView<ip_hdr,sizeof(eth_hdr)> IPDevice::receive() {
+    return ethMgr.ip_read();
 }

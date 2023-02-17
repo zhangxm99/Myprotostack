@@ -50,12 +50,10 @@ class ArpManager {
 private:
     arp_cache_entry arp_cache_table[ARP_CACHE_LEN];
     Netdevice &dev;
-    mutex buf_lock; //prevent conflict of arpreply and arprequest
-    unsigned char buf[ETHERMTU];
 
     void arpRequest(uint32_t);
     void mergeOrInsert(const arp_ipv4 *,uint16_t);
-    void arpReply();
+    void arpReply(arp_hdr*);
 
 
 public:

@@ -2,30 +2,24 @@
 // Created by 张晰铭 on 2023/2/7.
 //
 
-#include <cstring>
 #include <csignal>
 #include "EtherManager.h"
 #include "thread"
 #include "arpa/inet.h"
 #include "if_ether.h"
-#include "../NetworkLayer/ipv4_hdr.h"
-
-void EtherManager::insertipQ(char *ip) {
-    array<unsigned char,ETHERMTU> arr{};
-    memcpy(&arr[0],ip,ETHERMTU - sizeof(eth_hdr));
-    ipQ.emplace(arr);
-}
 
 [[noreturn]] void EtherManager::readLoop() {
     while(true){
-        eth_hdr *ethHdr = dev.receive();
+        auto view = dev.receive();
+        auto ethHdr = view.hdr;
         switch (ntohs(ethHdr->ethertype)) {
             case ETH_P_ARP:
                 arpMgr.arpIncoming((arp_hdr*)(ethHdr->payload));
                 break;
-            case ETH_P_IP:
-                insertipQ((char*)ethHdr->payload);
+            case ETH_P_IP:{
+                ipQ.emplace(DataView<ip_hdr,sizeof(eth_hdr)>(view));
                 break;
+            }
             default:
                 printf("%x not implement\n",ntohs(ethHdr->ethertype));
         }
@@ -33,22 +27,22 @@ void EtherManager::insertipQ(char *ip) {
     }
 }
 
-array<unsigned char,ETHERMTU> EtherManager::ip_read() {
+DataView<ip_hdr,sizeof(eth_hdr)> EtherManager::ip_read() {
     while(ipQ.empty()) usleep(100); //spinlock
-    array<unsigned char,ETHERMTU> res{};
-    res = ipQ.front();
+    auto res(ipQ.front());
     ipQ.pop();
     return res;
 }
 
-int EtherManager::ip_write(uint32_t nxthop,array<unsigned char,ETHERMTU>& ipData) {
+int EtherManager::ip_write(uint32_t nxthop,ip_hdr* ipData) {
     auto dmac = arpMgr.searchMAC(nxthop);
     //cant find such ip addr
     if(dmac == MAC_t{0,0,0,0,0,0}){
         return -1;
     }
+    int len = ntohs(ipData->len);
 
-    dev.transmit(dmac,ETH_P_IP,&ipData[0],ETHERMTU - sizeof(eth_hdr));
+    dev.transmit(dmac,ETH_P_IP,(unsigned char *)ipData,len);
 }
 
 EtherManager::EtherManager(char *_ip, char *MAC_): dev(_ip,MAC_), arpMgr(dev) {

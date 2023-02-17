@@ -8,4 +8,4 @@ aux_source_directory(LinkLayer LK)
 aux_source_directory(NetworkLayer NW)
 aux_source_directory(TransportLayer TP)
 
-add_executable(Mytcpip main.cpp ${IF} ${LK} ${NW} ${TP})
+add_executable(Mytcpip main.cpp ${IF} ${LK} ${NW}  )

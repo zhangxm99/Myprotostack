@@ -18,14 +18,12 @@ private:
     ArpManager arpMgr;
 
     [[noreturn]] void readLoop();
-    void insertipQ(char *);
-
-    queue<array<unsigned char,ETHERMTU>> ipQ;
+    queue<DataView<ip_hdr,sizeof(eth_hdr)>> ipQ;
 
 public:
     EtherManager(char *,char *);
-    array<unsigned char,ETHERMTU> ip_read();
-    int ip_write(uint32_t nxthop, array<unsigned char, ETHERMTU> &ipData);
+    DataView<struct ip_hdr, sizeof(struct eth_hdr)> ip_read();
+    int ip_write(uint32_t nxthop, ip_hdr* ipData);
 };
 
 

@@ -12,7 +12,6 @@
 class IPDevice {
 private:
     EtherManager ethMgr;
-    array<unsigned char,ETHERMTU> readBuf{};
     array<unsigned char,ETHERMTU> writeBuf{};
     mutex write_lock;
 
@@ -24,7 +23,7 @@ public:
     IPDevice(char *, char*);
 
     int transmit(uint32_t addr,uint8_t proto,uint8_t tos,char *payload,int len);
-    ip_hdr* receive();
+    DataView<ip_hdr,sizeof(eth_hdr)> receive();
 
 
 

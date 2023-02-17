@@ -6,7 +6,21 @@
 #define MYTCPIP_TUNTAP_H
 
 #include "string"
+#include <memory>
 using namespace std;
+
+template<typename T,int skip>
+struct DataView{
+    shared_ptr<unsigned char> pData;
+    T *hdr;
+    explicit DataView(unsigned char *_pData):pData(_pData),hdr((T*)(pData.get()+skip)) {}
+    explicit DataView(shared_ptr<unsigned char > &&_pData):pData(move(_pData)),hdr((T*)(pData.get()+skip)){}
+
+    template<typename U,int s>
+    explicit operator DataView<U,s>(){
+        return DataView<U,s>(move(pData));
+    }
+};
 
 
 class Tuntap {
@@ -21,8 +35,8 @@ public:
     Tuntap();
     ~Tuntap();
 
-    int tun_read(char*,int);
-    int tun_write(char*,int);
+    int tun_read(unsigned char*,int);
+    int tun_write(unsigned char*,int);
 
 
 };

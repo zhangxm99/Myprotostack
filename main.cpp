@@ -1,21 +1,18 @@
-#include <iostream>
-#include "IF/tuntap.h"
-#include "LinkLayer/Netdevice.h"
+//#include <iostream>
+//#include "IF/tuntap.h"
+//#include "LinkLayer/Netdevice.h"
 #include <unistd.h>
-#include <arpa/inet.h>
+//#include <arpa/inet.h>
 #include "LinkLayer/arp.h"
 #include "LinkLayer/EtherManager.h"
 #include "NetworkLayer/IPManager.h"
 
 #include <queue>
+#include <memory>
 
 #include "thread"
 using namespace std;
 
-struct T{
-    uint16_t a:3;
-    uint16_t b:13;
-}__attribute__((packed));;
 
 
 int main() {
@@ -57,9 +54,13 @@ int main() {
 //        }
 //    }
 
+//    IPManager mgr(ip,MAC);
+
+//    shared_ptr<char> pT(new char[10000]);
+//    shared_ptr<char> another(pT);
+
+
     IPManager mgr(ip,MAC);
-
-
 
 
 

@@ -18,8 +18,7 @@
 class Netdevice {
 private:
     Tuntap iface;
-    char readBuf[ETHERMTU];
-    char writeBuf[ETHERMTU];
+    unsigned char writeBuf[ETHERMTU];
     mutex writeLock;
 
 public:
@@ -28,7 +27,7 @@ public:
 
     Netdevice(char *addr, char *hwaddr);
     void transmit(MAC_t dst, uint16_t ethertype, unsigned char *payload,int payloadlen);
-    eth_hdr* receive();
+    DataView<eth_hdr,0> receive();
 
 
 };

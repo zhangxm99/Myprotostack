@@ -10,7 +10,7 @@
 #include "if_ether.h"
 
 
-Netdevice::Netdevice(char *addr, char *mac): iface(), readBuf{},writeLock() {
+Netdevice::Netdevice(char *addr, char *mac): iface(),writeLock() {
     if(inet_pton(AF_INET,addr,&inet4) != 1){
         fputs("failed to bind the ip address",stderr);
         exit(1);
@@ -24,9 +24,11 @@ Netdevice::Netdevice(char *addr, char *mac): iface(), readBuf{},writeLock() {
            &hwaddr[5]);
 }
 
-eth_hdr* Netdevice::receive() {
-    iface.tun_read(readBuf, ETHERMTU);
-    return (eth_hdr *)(readBuf);
+DataView<eth_hdr,0> Netdevice::receive() {
+    auto pData = new unsigned char[ETHERMTU];
+    iface.tun_read(pData, ETHERMTU);
+    DataView<eth_hdr,0> ret(pData);
+    return ret;
 }
 
 void Netdevice::transmit(std::array<unsigned char, 6> dst, uint16_t ethertype, unsigned char *payload, int payloadlen) {

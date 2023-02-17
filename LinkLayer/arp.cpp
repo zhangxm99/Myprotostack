@@ -35,8 +35,7 @@ void ArpManager::mergeOrInsert(const arp_ipv4 *data, uint16_t hwtype) {
     }
 }
 
-void ArpManager::arpReply() {
-    auto arpHdr = (arp_hdr*)buf;
+void ArpManager::arpReply(arp_hdr *arpHdr) {
     auto arpData = (arp_ipv4*)arpHdr->data;
     arpData->dip = arpData->sip;
     arpData->sip = dev.inet4;
@@ -48,15 +47,14 @@ void ArpManager::arpReply() {
     arpHdr->hwtype = htons(arpHdr->hwtype);
     arpHdr->protype = htons(arpHdr->protype);
 
-    dev.transmit(arpData->dmac,ETH_P_ARP,buf,sizeof(arp_ipv4)+sizeof(arp_hdr));
+    dev.transmit(arpData->dmac,ETH_P_ARP,(unsigned char*)arpHdr,sizeof(arp_ipv4)+sizeof(arp_hdr));
 
 }
 
 //
 void ArpManager::arpRequest(uint32_t ip) {
-    buf_lock.lock();
-
-    auto arpHdr = (arp_hdr*) buf;
+    unsigned char arpReq[sizeof(arp_hdr) + sizeof(arp_ipv4)];
+    auto arpHdr = (arp_hdr*) arpReq;
     auto arpData = (arp_ipv4*)arpHdr->data;
 
     arpData->dip = ip;
@@ -71,9 +69,8 @@ void ArpManager::arpRequest(uint32_t ip) {
     arpHdr->hwsize = 6;
     arpHdr->prosize = 4;
 
-    dev.transmit(arpData->dmac,ETH_P_ARP,buf,sizeof(arp_ipv4)+sizeof(arp_hdr));
+    dev.transmit(arpData->dmac,ETH_P_ARP,arpReq,sizeof(arp_ipv4)+sizeof(arp_hdr));
 
-    buf_lock.unlock();
 }
 
 /* search corresponding MAC addr
@@ -114,9 +111,8 @@ MAC_t ArpManager::searchMAC(uint32_t ip) {
           +---------+
 */
 void ArpManager::arpIncoming(arp_hdr *arpHdr) {
-    buf_lock.lock();
-    memcpy(buf,(char*)arpHdr,ETHERMTU - sizeof(eth_hdr));
-    arpHdr = (arp_hdr*) buf;
+//    memcpy(buf,(char*)arpHdr,ETHERMTU - sizeof(eth_hdr));
+//    arpHdr = (arp_hdr*) buf;
     // big endian to little endian
     arpHdr->hwtype  =  ntohs(arpHdr->hwtype);
     arpHdr->opcode  =  ntohs(arpHdr->opcode);
@@ -124,12 +120,10 @@ void ArpManager::arpIncoming(arp_hdr *arpHdr) {
 
     if(arpHdr->hwtype != ARP_ETHERNET){
         printf("unsupported hardware\n");
-        buf_lock.unlock();
         return;
     }
     if(arpHdr->protype != ARP_IPV4){
         printf("unsupported protocol\n");
-        buf_lock.unlock();
         return;
     }
 
@@ -139,20 +133,18 @@ void ArpManager::arpIncoming(arp_hdr *arpHdr) {
 
     if(arpIpv4->dip != dev.inet4){
         printf("Not a package for us\n");
-        buf_lock.unlock();
         return;
     }
 
     switch (arpHdr->opcode) {
         case ARP_REQUEST:
-            arpReply();
+            arpReply(arpHdr);
             break;
         case ARP_REPLY:
             break;
         default:
             printf("Unknown ARP opcode\n");
     }
-    buf_lock.unlock();
 
 
 

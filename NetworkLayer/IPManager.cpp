@@ -3,6 +3,7 @@
 //
 
 #include <netinet/in.h>
+#include <csignal>
 #include "IPManager.h"
 
 uint16_t IPManager::checksum(void *addr, int count) {
@@ -37,7 +38,8 @@ IPManager::IPManager(char *_ip, char *MAC_): dev(_ip,MAC_), icmpMgr(_ip,dev) {
 
 [[noreturn]] void IPManager::readLoop() {
     while (true){
-        auto ipHdr = dev.receive();
+        auto v = dev.receive();
+        auto ipHdr = v.hdr;
         if (ipHdr->version != IPV4) {
             perror("Datagram version was not IPv4\n");
             continue;
@@ -65,10 +67,11 @@ IPManager::IPManager(char *_ip, char *MAC_): dev(_ip,MAC_), icmpMgr(_ip,dev) {
                 icmpMgr.icmpIncoming(ipHdr);
                 break;
             case UDP:
-                insertQ(UDPq,ipHdr->data);
+                printf("%ld\n",v.pData.use_count());
+                insertudpQ(UDPq,DataView<ip_hdr,sizeof(eth_hdr)>(v));
                 break;
             case TCP:
-                insertQ(TCPq,ipHdr->data);
+//                inserttcpQ(TCPq,ipHdr->data);
                 break;
             default:
                 perror("Unknown IP header proto\n");
@@ -78,8 +81,28 @@ IPManager::IPManager(char *_ip, char *MAC_): dev(_ip,MAC_), icmpMgr(_ip,dev) {
     }
 }
 
-void IPManager::insertQ(queue<array<unsigned char, 1514>> &q, uint8_t *data) {
-    array<unsigned char,ETHERMTU> arr{};
-    memcpy(&arr[0],data,ETHERMTU - sizeof(eth_hdr) - sizeof(ip_hdr));
-    q.emplace(arr);
+void IPManager::insertudpQ(queue<DataView<UDPFakeheader,sizeof(eth_hdr)+sizeof(ip_hdr)-sizeof(UDPFakeheader)>> &q,
+                           DataView<ip_hdr,sizeof(eth_hdr)> v) {
+    uint32_t src = v.hdr->saddr;
+    uint32_t dst = v.hdr->daddr;
+    auto res = DataView<UDPFakeheader,sizeof(eth_hdr)+sizeof(ip_hdr)-sizeof(UDPFakeheader)>(v);
+    printf("%ld\n",res.pData.use_count());
+    (res.hdr)->dst = src;
+    (res.hdr)->src = dst;
+    (res.hdr)->ZERO = 0;
+    (res.hdr)->UDPproto = UDP;
+    (res.hdr)->UDPlen = ((udp_hdr *)(res.hdr->data))->len;
+    q.emplace(res);
+}
+
+//! \return udp fake header
+auto IPManager::udp_read() {
+    while(UDPq.empty()) usleep(100);
+    auto res(UDPq.front());
+    UDPq.pop();
+    return res;
+}
+
+int IPManager::udp_write(uint32_t ip,array<unsigned char,ETHERMTU>& ipData,int len) {
+    return dev.transmit(ip,UDP,0,(char*)&ipData[0],len);
 }
