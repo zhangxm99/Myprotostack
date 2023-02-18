@@ -4,6 +4,7 @@
 
 #include <netinet/in.h>
 #include <csignal>
+#include <arpa/inet.h>
 #include "IPManager.h"
 
 uint16_t IPManager::checksum(void *addr, int count) {
@@ -32,6 +33,7 @@ uint16_t IPManager::checksum(void *addr, int count) {
 }
 
 IPManager::IPManager(char *_ip, char *MAC_): dev(_ip,MAC_), icmpMgr(_ip,dev) {
+    inet_pton(AF_INET,_ip,&myIP);
     std::thread l(&IPManager::readLoop, this);
     l.detach();
 }

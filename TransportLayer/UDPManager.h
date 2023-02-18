@@ -18,14 +18,14 @@ struct UDPStruct{
 class UDPManager {
 private:
     uint32_t ip;
-    IPManager ipmgr;
+    IPManager &ipmgr;
     unordered_map<uint16_t,queue<UDPStruct>> portMp;
     [[noreturn]]void readLoop();
     uint16_t checksum(void *addr, int count);
 
 
 public:
-    UDPManager(char*,char*);
+    UDPManager(IPManager &_ipmgr);
     UDPStruct getData(uint16_t);
     int writeData(uint32_t,uint16_t,uint16_t ,uint8_t *,int );
 

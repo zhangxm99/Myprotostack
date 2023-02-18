@@ -4,7 +4,6 @@
 
 #include <csignal>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include "UDPManager.h"
 
 
@@ -15,8 +14,7 @@ UDPStruct UDPManager::getData(uint16_t localport) {
     return res;
 }
 
-UDPManager::UDPManager(char *_ip, char *MAC_): ipmgr(_ip,MAC_) {
-    inet_pton(AF_INET,_ip,&ip);
+UDPManager::UDPManager(IPManager &_ipmgr) : ipmgr(_ipmgr),ip(_ipmgr.myIP) {
     thread l(&UDPManager::readLoop, this);
     l.detach();
 }
@@ -63,7 +61,6 @@ void UDPManager::readLoop() {
             .datagram = DataView<uint8_t,sizeof(eth_hdr)+sizeof(ip_hdr)+sizeof(udp_hdr)>(UDPcontent),
             .sz = (uint16_t)(len - sizeof(udp_hdr)),
         });
-        printf("%lu\n",portMp[100].size());
 
 
     }

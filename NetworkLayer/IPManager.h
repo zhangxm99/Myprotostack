@@ -40,6 +40,7 @@ private:
     void insertudpQ(queue<DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)>>&,
                     DataView<ip_hdr,sizeof(eth_hdr)> );
 public:
+    uint32_t myIP;
     IPManager(char *,char *);
 
     DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)> udp_read();

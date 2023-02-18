@@ -2,14 +2,15 @@
 //#include "IF/tuntap.h"
 //#include "LinkLayer/Netdevice.h"
 #include <unistd.h>
-//#include <arpa/inet.h>
 #include "LinkLayer/arp.h"
 #include "LinkLayer/EtherManager.h"
 #include "NetworkLayer/IPManager.h"
 #include "TransportLayer/UDPManager.h"
+#include "Socket/Socket.h"
 
 #include <queue>
 #include <memory>
+#include <netinet/in.h>
 
 #include "thread"
 using namespace std;
@@ -19,27 +20,6 @@ using namespace std;
 int main() {
     char *ip = "10.0.0.4";
     char *MAC = "7e:1a:6d:c7:c8:f9";
-
-//    Netdevice dev(ip,MAC);
-//    ArpManager arpmgr(dev);
-//
-//    eth_hdr *recv = nullptr;
-//
-//    thread read = thread([&](){while(1) {recv = dev.receive();
-//        printf("%x\n",ntohs(recv->ethertype));
-//        }});
-//
-//    read.detach();
-//
-//    while(1){
-//        printf("%d\n",dev.transmit({0,0,0,0,0,0},ETH_P_ARP,100));
-//
-//    }
-//    memset((uint8_t *) &t,0x40,1);
-//    memset((uint8_t *) &t+1,0x40,1);
-
-//    IPDevice dev(ip,MAC);
-//    ICMPManager mgr(ip,dev);
 //
 //
 //
@@ -56,11 +36,23 @@ int main() {
 //    }
 
 
-    UDPManager mgr(ip,MAC);
+//    UDPManager mgr(<#initializer#>);
+//    while(1) {
+//        auto[sip, port, dtview,sz] = mgr.getData(100);
+//        mgr.writeData(sip, 100, port, dtview.hdr, sz);
+//    }
+    IPManager ipmgr(ip,MAC);
+    Socket<SOCK_UDP> socket(ipmgr);
+    socket.bind(100);
     while(1) {
-        auto[sip, port, dtview,sz] = mgr.getData(100);
-        mgr.writeData(sip, 100, port, dtview.hdr, sz);
+        char buf[100];
+        auto [ip,port] = socket.recv_from((uint8_t*)buf,100);
+        printf("client say: %s\n",buf);
+        scanf("%s",buf);
+
+        socket.sendto((uint8_t*)buf, strlen(buf)+1,ip,port);
     }
+
 
 
 

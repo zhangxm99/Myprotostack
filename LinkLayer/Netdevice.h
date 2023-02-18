@@ -26,7 +26,7 @@ public:
     array<uint8_t, 6> hwaddr;
 
     Netdevice(char *addr, char *hwaddr);
-    void transmit(MAC_t dst, uint16_t ethertype, uint8_t *payload,int payloadlen);
+    int32_t transmit(MAC_t dst, uint16_t ethertype, uint8_t *payload,int payloadlen);
     DataView<eth_hdr,0> receive();
 
 
