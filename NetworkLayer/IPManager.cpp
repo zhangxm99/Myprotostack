@@ -81,14 +81,13 @@ IPManager::IPManager(char *_ip, char *MAC_): dev(_ip,MAC_), icmpMgr(_ip,dev) {
     }
 }
 
-void IPManager::insertudpQ(queue<DataView<UDPFakeheader,sizeof(eth_hdr)+sizeof(ip_hdr)-sizeof(UDPFakeheader)>> &q,
+void IPManager::insertudpQ(queue<DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)>> &q,
                            DataView<ip_hdr,sizeof(eth_hdr)> v) {
     uint32_t src = v.hdr->saddr;
     uint32_t dst = v.hdr->daddr;
-    auto res = DataView<UDPFakeheader,sizeof(eth_hdr)+sizeof(ip_hdr)-sizeof(UDPFakeheader)>(v);
-    printf("%ld\n",res.pData.use_count());
-    (res.hdr)->dst = src;
-    (res.hdr)->src = dst;
+    auto res = DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)>(v);
+    (res.hdr)->dst = dst;
+    (res.hdr)->src = src;
     (res.hdr)->ZERO = 0;
     (res.hdr)->UDPproto = UDP;
     (res.hdr)->UDPlen = ((udp_hdr *)(res.hdr->data))->len;
@@ -96,13 +95,13 @@ void IPManager::insertudpQ(queue<DataView<UDPFakeheader,sizeof(eth_hdr)+sizeof(i
 }
 
 //! \return udp fake header
-auto IPManager::udp_read() {
+DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)> IPManager::udp_read() {
     while(UDPq.empty()) usleep(100);
     auto res(UDPq.front());
     UDPq.pop();
     return res;
 }
 
-int IPManager::udp_write(uint32_t ip,array<unsigned char,ETHERMTU>& ipData,int len) {
-    return dev.transmit(ip,UDP,0,(char*)&ipData[0],len);
+int IPManager::udp_write(uint32_t ip, uint8_t *ipData, int len) {
+    return dev.transmit(ip,UDP,0,(char*)ipData,len);
 }

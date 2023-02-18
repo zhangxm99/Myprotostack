@@ -42,7 +42,7 @@ int EtherManager::ip_write(uint32_t nxthop,ip_hdr* ipData) {
     }
     int len = ntohs(ipData->len);
 
-    dev.transmit(dmac,ETH_P_IP,(unsigned char *)ipData,len);
+    dev.transmit(dmac,ETH_P_IP,(uint8_t *)ipData,len);
 }
 
 EtherManager::EtherManager(char *_ip, char *MAC_): dev(_ip,MAC_), arpMgr(dev) {

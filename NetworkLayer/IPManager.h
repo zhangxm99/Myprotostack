@@ -9,7 +9,7 @@
 #include "IPDevice.h"
 #include "ICMPManager.h"
 
-struct UDPFakeheader{
+struct udp_fakehdr{
     uint32_t src;
     uint32_t dst;
     uint8_t ZERO;
@@ -24,25 +24,26 @@ struct udp_hdr
     uint16_t dest;
     uint16_t len;
     uint16_t check;
-};
+    uint8_t data[];
+}__attribute__((packed));
 
 class IPManager {
 private:
     IPDevice dev;
     ICMPManager icmpMgr;
 
-    queue<DataView<UDPFakeheader,sizeof(eth_hdr)+sizeof(ip_hdr)-sizeof(UDPFakeheader)>> UDPq;
-//    queue<array<unsigned char,ETHERMTU>> TCPq;
+    queue<DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)>> UDPq;
+//    queue<array<uint8_t,ETHERMTU>> TCPq;
 
     [[noreturn]] void readLoop();
     uint16_t checksum(void *addr, int count);
-    void insertudpQ(queue<DataView<UDPFakeheader,sizeof(eth_hdr)+sizeof(ip_hdr)-sizeof(UDPFakeheader)>>&,
+    void insertudpQ(queue<DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)>>&,
                     DataView<ip_hdr,sizeof(eth_hdr)> );
 public:
     IPManager(char *,char *);
 
-    auto udp_read();
-    int udp_write(uint32_t ip, array<unsigned char, ETHERMTU> &ipData,int len);
+    DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)> udp_read();
+    int udp_write(uint32_t ip, uint8_t *ipData, int len);
 
 };
 

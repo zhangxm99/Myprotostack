@@ -6,6 +6,7 @@
 #include "LinkLayer/arp.h"
 #include "LinkLayer/EtherManager.h"
 #include "NetworkLayer/IPManager.h"
+#include "TransportLayer/UDPManager.h"
 
 #include <queue>
 #include <memory>
@@ -54,13 +55,13 @@ int main() {
 //        }
 //    }
 
-//    IPManager mgr(ip,MAC);
 
-//    shared_ptr<char> pT(new char[10000]);
-//    shared_ptr<char> another(pT);
+    UDPManager mgr(ip,MAC);
+    while(1) {
+        auto[sip, port, dtview,sz] = mgr.getData(100);
+        mgr.writeData(sip, 100, port, dtview.hdr, sz);
+    }
 
-
-    IPManager mgr(ip,MAC);
 
 
 

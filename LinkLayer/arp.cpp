@@ -47,13 +47,13 @@ void ArpManager::arpReply(arp_hdr *arpHdr) {
     arpHdr->hwtype = htons(arpHdr->hwtype);
     arpHdr->protype = htons(arpHdr->protype);
 
-    dev.transmit(arpData->dmac,ETH_P_ARP,(unsigned char*)arpHdr,sizeof(arp_ipv4)+sizeof(arp_hdr));
+    dev.transmit(arpData->dmac,ETH_P_ARP,(uint8_t*)arpHdr,sizeof(arp_ipv4)+sizeof(arp_hdr));
 
 }
 
 //
 void ArpManager::arpRequest(uint32_t ip) {
-    unsigned char arpReq[sizeof(arp_hdr) + sizeof(arp_ipv4)];
+    uint8_t arpReq[sizeof(arp_hdr) + sizeof(arp_ipv4)];
     auto arpHdr = (arp_hdr*) arpReq;
     auto arpData = (arp_ipv4*)arpHdr->data;
 

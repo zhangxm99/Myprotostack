@@ -12,7 +12,7 @@
 class IPDevice {
 private:
     EtherManager ethMgr;
-    array<unsigned char,ETHERMTU> writeBuf{};
+    array<uint8_t,ETHERMTU> writeBuf{};
     mutex write_lock;
 
 

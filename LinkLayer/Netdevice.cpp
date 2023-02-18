@@ -25,13 +25,13 @@ Netdevice::Netdevice(char *addr, char *mac): iface(),writeLock() {
 }
 
 DataView<eth_hdr,0> Netdevice::receive() {
-    auto pData = new unsigned char[ETHERMTU];
+    auto pData = new uint8_t[ETHERMTU];
     iface.tun_read(pData, ETHERMTU);
     DataView<eth_hdr,0> ret(pData);
     return ret;
 }
 
-void Netdevice::transmit(std::array<unsigned char, 6> dst, uint16_t ethertype, unsigned char *payload, int payloadlen) {
+void Netdevice::transmit(std::array<uint8_t, 6> dst, uint16_t ethertype, uint8_t *payload, int payloadlen) {
     writeLock.lock();
     ((eth_hdr*)&writeBuf)->ethertype = htons(ethertype);
     ((eth_hdr*)&writeBuf)->smac = hwaddr;

@@ -11,10 +11,10 @@ using namespace std;
 
 template<typename T,int skip>
 struct DataView{
-    shared_ptr<unsigned char> pData;
+    shared_ptr<uint8_t> pData;
     T *hdr;
-    explicit DataView(unsigned char *_pData):pData(_pData),hdr((T*)(pData.get()+skip)) {}
-    explicit DataView(shared_ptr<unsigned char > &&_pData):pData(move(_pData)),hdr((T*)(pData.get()+skip)){}
+    explicit DataView(uint8_t *_pData):pData(_pData),hdr((T*)(pData.get()+skip)) {}
+    explicit DataView(shared_ptr<uint8_t > &&_pData):pData(move(_pData)),hdr((T*)(pData.get()+skip)){}
 
     template<typename U,int s>
     explicit operator DataView<U,s>(){
@@ -35,15 +35,16 @@ public:
     Tuntap();
     ~Tuntap();
 
-    int tun_read(unsigned char*,int);
-    int tun_write(unsigned char*,int);
+    int tun_read(uint8_t*,int);
+    int tun_write(uint8_t*,int);
+
 
 
 };
 
 struct netdev{
     uint32_t addr; //IP addr
-    unsigned char hwaddr[6]; //MAC addr
+    uint8_t hwaddr[6]; //MAC addr
 };
 
 

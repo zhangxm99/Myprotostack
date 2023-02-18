@@ -44,11 +44,11 @@ Tuntap::~Tuntap() {
     close(fd);
 }
 
-int Tuntap::tun_read(unsigned char *buf, int len) {
+int Tuntap::tun_read(uint8_t *buf, int len) {
     return read(fd,buf,len);
 }
 
-int Tuntap::tun_write(unsigned char *buf, int len) {
+int Tuntap::tun_write(uint8_t *buf, int len) {
     return write(fd,buf,len);
 }
 
