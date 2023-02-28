@@ -35,34 +35,49 @@ IPDevice::IPDevice(char *_ip, char *MAC): ethMgr(_ip, MAC) {
     inet_pton(AF_INET,_ip,&ip);
 }
 
-int IPDevice::transmit(uint32_t addr, uint8_t proto, uint8_t tos, char *payload, int len) {
+int IPDevice::transmit(uint32_t addr, uint8_t proto, uint8_t tos, char *payload, uint16_t len) {
     write_lock.lock();
+
     auto ipHdr = (ip_hdr*)&writeBuf[0];
+    uint16_t accumulateLen = 0;
+    /* In ip split scene, frag_offset field is multiples of 8, so need round up*/
+    auto origMaxDataLen = ETHERMTU - sizeof(eth_hdr) - sizeof(ip_hdr);
+    auto roundMaxLen = (origMaxDataLen/8) * 8;
 
-    ipHdr->tos = tos;
-    ipHdr->proto = proto;
-    ipHdr->daddr = addr;
-    ipHdr->version = 4;
-    ipHdr->ihl = 5;
-    ipHdr->saddr = ip;
-    ipHdr->ttl = 64;
-    ipHdr->id = 0;
-    /*
-     * because of the different implement of bit field order by compiler,
-     * here using pointer method set flag = 0b010, frag_offset = 0,
-     * which means no slicing the IP packet
-     */
-    *(uint16_t*)((uint8_t *)ipHdr+5) = 0x4000;
+    while(len){
+        ipHdr->tos = tos;
+        ipHdr->proto = proto;
+        ipHdr->daddr = addr;
+        ipHdr->version = 4;
+        ipHdr->ihl = 5;
+        ipHdr->saddr = ip;
+        ipHdr->ttl = 64;
+        ipHdr->id = htons(id);
 
-    ipHdr->len = htons(len + ipHdr->ihl*4);
-    ipHdr->csum = 0;
-    ipHdr->csum = checksum(ipHdr,ipHdr->ihl*4);
+        if(len <= origMaxDataLen){
+            ipHdr->len = htons(len + ipHdr->ihl*4);
+            *((uint16_t*)ipHdr+3) = 0;
+            if(accumulateLen == 0){
+                *((uint8_t*)ipHdr+6)  = 0x40;
+            } else{
+                *((uint16_t*)ipHdr+3) = htons(accumulateLen/8);
+            }
+            len = 0;
+        } else{
+            ipHdr->len = htons(roundMaxLen + ipHdr->ihl*4);
+            *((uint16_t*)ipHdr+3) = htons(accumulateLen/8);
+            *((uint8_t*)ipHdr+6) |= 0x20;
+            len -= roundMaxLen;
+        }
+        ipHdr->csum = 0;
+        ipHdr->csum = checksum(ipHdr,ipHdr->ihl*4);
+        memcpy(ipHdr->data,payload+accumulateLen,ntohs(ipHdr->len)-ipHdr->ihl*4);
+        ethMgr.ip_write(addr,(ip_hdr*)&writeBuf[0]);
+        accumulateLen += roundMaxLen;
+    }
 
-    memcpy(((ip_hdr*)&writeBuf[0])->data,payload,len);
-    int res = ethMgr.ip_write(addr,(ip_hdr*)&writeBuf[0]);
-
+    id = (id+1) % UINT16_MAX;
     write_lock.unlock();
-    return res;
 }
 
 DataView<ip_hdr,sizeof(eth_hdr)> IPDevice::receive() {

@@ -61,49 +61,68 @@ IPManager::IPManager(char *_ip, char *MAC_): dev(_ip,MAC_), icmpMgr(_ip,dev) {
         if(csum != 0){
             continue;
         }
-
         ipHdr->len = ntohs(ipHdr->len);
+        ipHdr->id  = ntohs(ipHdr->id);
+
+        /* check if it's a split IP packet */
+        if((*((uint8_t*)ipHdr+6)&0x40) == 0){
+            /* split */
+            switch (splitMp[ipHdr->id].insert(v)) {
+                case 0:
+                    v = splitMp[ipHdr->id].get();
+                    splitMp.erase(ipHdr->id);
+                    ipHdr = v.hdr;
+                    break;
+                case -2:
+                    splitMp.erase(ipHdr->id);
+                default:
+                    continue;
+
+            }
+        }
 
         switch (ipHdr->proto) {
             case ICMPV4:
                 icmpMgr.icmpIncoming(ipHdr);
                 break;
             case UDP:
-                printf("%ld\n",v.pData.use_count());
-                insertudpQ(UDPq,DataView<ip_hdr,sizeof(eth_hdr)>(v));
+                insertQ(UDPq,DataView<ip_hdr,sizeof(eth_hdr)>(v),UDP);
                 break;
             case TCP:
-//                inserttcpQ(TCPq,ipHdr->data);
+                insertQ(TCPq,DataView<ip_hdr,sizeof(eth_hdr)>(v),TCP);
                 break;
             default:
                 perror("Unknown IP header proto\n");
                 continue;
         }
-
     }
+
+
 }
 
-void IPManager::insertudpQ(queue<DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)>> &q,
-                           DataView<ip_hdr,sizeof(eth_hdr)> v) {
+void IPManager::insertQ(queue<DataView<pseudohdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(pseudohdr)>> &q,
+                           DataView<ip_hdr,sizeof(eth_hdr)> v,uint32_t protoType) {
     uint32_t src = v.hdr->saddr;
     uint32_t dst = v.hdr->daddr;
-    auto res = DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)>(v);
+    int dataofipLen = htons(v.hdr->len - v.hdr->ihl*4);
+    auto res = DataView<pseudohdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(pseudohdr)>(v);
     (res.hdr)->dst = dst;
     (res.hdr)->src = src;
     (res.hdr)->ZERO = 0;
-    (res.hdr)->UDPproto = UDP;
-    (res.hdr)->UDPlen = ((udp_hdr *)(res.hdr->data))->len;
+    (res.hdr)->proto = protoType;
+    (res.hdr)->len = dataofipLen;
     q.emplace(res);
 }
 
-//! \return udp fake header
-DataView<udp_fakehdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(udp_fakehdr)> IPManager::udp_read() {
-    while(UDPq.empty()) usleep(100);
-    auto res(UDPq.front());
-    UDPq.pop();
+//! \return fake header
+DataView<pseudohdr, sizeof(eth_hdr) + sizeof(ip_hdr) - sizeof(pseudohdr)> IPManager::read(uint32_t protoType) {
+    auto &q = protoType == UDP?UDPq:TCPq;
+    while(q.empty()) usleep(100);
+    auto res(q.front());
+    q.pop();
     return res;
 }
 
-int IPManager::udp_write(uint32_t ip, uint8_t *ipData, int len) {
-    return dev.transmit(ip,UDP,0,(char*)ipData,len);
+int IPManager::write(uint32_t ip,uint8_t proto, uint8_t *ipData, int len) {
+    return dev.transmit(ip,proto,0,(char*)ipData,len);
 }

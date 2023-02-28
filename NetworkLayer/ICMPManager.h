@@ -49,7 +49,7 @@ public:
     void icmpIncoming(ip_hdr *ipHdr);
 
 
-    uint16_t checksum(icmp_v4 *pV4, uint16_t len);
+    uint16_t checksum(void *pV4, uint16_t len);
 
 };
 

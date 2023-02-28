@@ -18,9 +18,9 @@ void ICMPManager::icmpIncoming(ip_hdr *ipHdr) {
     switch (icmpHdr->type) {
         case ICMP_V4_ECHO:
             icmpHdr->type = ICMP_V4_REPLY;
-            icmpHdr->csum = 0;
             len = ipHdr->len - (ipHdr->ihl * 4);
-            icmpHdr->csum = checksum(icmpHdr, len);
+            icmpHdr->csum = 0;
+            icmpHdr->csum = checksum((uint16_t*)icmpHdr, len);
             if(dev.transmit(ipHdr->saddr,ICMPV4,0,(char*)icmpHdr,len) == -1) perror("ICMP reply failed\n");
             break;
         default:
@@ -28,7 +28,7 @@ void ICMPManager::icmpIncoming(ip_hdr *ipHdr) {
     }
 }
 
-uint16_t ICMPManager::checksum(icmp_v4 *addr, uint16_t count) {
+uint16_t ICMPManager::checksum(void *addr, uint16_t count) {
     /* Compute Internet Checksum for "count" bytes
  *         beginning at location "addr".
  * Taken from https://tools.ietf.org/html/rfc1071
