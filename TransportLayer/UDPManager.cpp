@@ -36,7 +36,7 @@ uint16_t UDPManager::checksum(void *addr, int count) {
 
     /*  Add left-over byte, if any */
     if( count > 0 )
-        sum += * (uint8_t *) addr;
+        sum += * (uint8_t *) ptr;
 
     /*  Fold 32-bit sum to 16 bits */
     while (sum>>16)

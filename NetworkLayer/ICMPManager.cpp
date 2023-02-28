@@ -44,7 +44,7 @@ uint16_t ICMPManager::checksum(void *addr, uint16_t count) {
 
     /*  Add left-over byte, if any */
     if( count > 0 )
-        sum += * (uint8_t *) addr;
+        sum += * (uint8_t *) ptr;
 
     /*  Fold 32-bit sum to 16 bits */
     while (sum>>16)
