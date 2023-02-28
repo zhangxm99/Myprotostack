@@ -6,6 +6,7 @@
 #define MYTCPIP_UDPMANAGER_H
 #include "../NetworkLayer/IPManager.h"
 #include <unordered_map>
+#include <unordered_set>
 
 
 struct UDPStruct{
@@ -22,10 +23,13 @@ private:
     unordered_map<uint16_t,queue<UDPStruct>> portMp;
     [[noreturn]]void readLoop();
     uint16_t checksum(void *addr, int count);
-
+    unordered_set<uint16_t> unusedPort;
 
 public:
     UDPManager(IPManager &_ipmgr);
+    uint16_t applyPort();
+    int16_t usePort(uint16_t port);
+    void freePort(uint16_t port);
     UDPStruct getData(uint16_t);
     int writeData(uint32_t,uint16_t,uint16_t ,uint8_t *,int );
 

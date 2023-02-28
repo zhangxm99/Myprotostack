@@ -15,6 +15,7 @@ UDPStruct UDPManager::getData(uint16_t localport) {
 }
 
 UDPManager::UDPManager(IPManager &_ipmgr) : ipmgr(_ipmgr),ip(_ipmgr.myIP) {
+    for(int i = 1;i < 50;i++) unusedPort.emplace(i);
     thread l(&UDPManager::readLoop, this);
     l.detach();
 }
@@ -46,14 +47,14 @@ uint16_t UDPManager::checksum(void *addr, int count) {
 
 void UDPManager::readLoop() {
     while (true){
-        auto UDPcontent = ipmgr.udp_read();
+        auto UDPcontent = ipmgr.read(UDP);
         auto source = UDPcontent.hdr->src;
         auto srcport = ntohs(((udp_hdr*)(UDPcontent.hdr->data))->source);
         auto destport = ntohs(((udp_hdr*)(UDPcontent.hdr->data))->dest);
-        auto len = ntohs(UDPcontent.hdr->UDPlen);
+        auto len = ntohs(UDPcontent.hdr->len);
 
         //check
-        if(checksum(UDPcontent.hdr,len + sizeof(udp_fakehdr)) != 0) continue;
+        if(checksum(UDPcontent.hdr,len + sizeof(pseudohdr)) != 0) continue;
 
         portMp[destport].emplace(UDPStruct {
             .ip = source,
@@ -65,19 +66,39 @@ void UDPManager::readLoop() {
 
     }
 }
-int UDPManager::writeData(uint32_t dst, uint16_t selfport,uint16_t desport,uint8_t *data,int len) {
-    uint8_t buf[len+sizeof(udp_hdr)+sizeof(udp_fakehdr)];
-    ((udp_fakehdr*)(buf))->src = ip;
-    ((udp_fakehdr*)(buf))->dst = dst;
-    ((udp_fakehdr*)(buf))->UDPlen = htons(len + sizeof(udp_hdr));
-    ((udp_fakehdr*)(buf))->UDPproto = UDP;
-    ((udp_fakehdr*)(buf))->ZERO = 0;
-    ((udp_hdr*)(buf+sizeof(udp_fakehdr)))->dest = htons(desport);
-    ((udp_hdr*)(buf+sizeof(udp_fakehdr)))->source = htons(selfport);
-    ((udp_hdr*)(buf+sizeof(udp_fakehdr)))->len = htons(len + sizeof(udp_hdr));
-    ((udp_hdr*)(buf+sizeof(udp_fakehdr)))->check = 0;
-    memcpy(buf + sizeof(udp_fakehdr) + sizeof(udp_hdr), data, len);
-    ((udp_hdr*)(buf+sizeof(udp_fakehdr)))->check = checksum(buf, len + sizeof(udp_hdr) + sizeof(udp_fakehdr));
 
-    ipmgr.udp_write(dst,buf+sizeof(udp_fakehdr), len + sizeof(udp_hdr));
+uint16_t UDPManager::applyPort() {
+    auto res = *unusedPort.begin();
+    unusedPort.erase(unusedPort.begin());
+    return res;
+}
+
+int16_t UDPManager::usePort(uint16_t port) {
+    if(unusedPort.count(port) == 1){
+        unusedPort.erase(unusedPort.find(port));
+        return 1;
+    } else{
+        return -1;
+    }
+}
+
+void UDPManager::freePort(uint16_t port) {
+    unusedPort.emplace(port);
+}
+
+int UDPManager::writeData(uint32_t dst, uint16_t selfport,uint16_t desport,uint8_t *data,int len) {
+    uint8_t buf[len+sizeof(udp_hdr)+sizeof(pseudohdr)];
+    ((pseudohdr*)(buf))->src = ip;
+    ((pseudohdr*)(buf))->dst = dst;
+    ((pseudohdr*)(buf))->len = htons(len + sizeof(udp_hdr));
+    ((pseudohdr*)(buf))->proto = UDP;
+    ((pseudohdr*)(buf))->ZERO = 0;
+    ((udp_hdr*)(buf+sizeof(pseudohdr)))->dest = htons(desport);
+    ((udp_hdr*)(buf+sizeof(pseudohdr)))->source = htons(selfport);
+    ((udp_hdr*)(buf+sizeof(pseudohdr)))->len = htons(len + sizeof(udp_hdr));
+    ((udp_hdr*)(buf+sizeof(pseudohdr)))->check = 0;
+    memcpy(buf + sizeof(pseudohdr) + sizeof(udp_hdr), data, len);
+    ((udp_hdr*)(buf+sizeof(pseudohdr)))->check = checksum(buf, len + sizeof(udp_hdr) + sizeof(pseudohdr));
+
+    ipmgr.write(dst, buf + sizeof(pseudohdr), len + sizeof(udp_hdr));
 }
