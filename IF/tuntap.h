@@ -14,11 +14,12 @@ struct DataView{
     shared_ptr<uint8_t> pData;
     T *hdr;
     explicit DataView(uint8_t *_pData):pData(_pData),hdr((T*)(pData.get()+skip)) {}
+    explicit DataView(shared_ptr<uint8_t> &_p):pData(_p),hdr((T*)(pData.get()+skip)) {}
     explicit DataView(shared_ptr<uint8_t > &&_pData):pData(move(_pData)),hdr((T*)(pData.get()+skip)){}
 
     template<typename U,int s>
     explicit operator DataView<U,s>(){
-        return DataView<U,s>(move(pData));
+        return DataView<U,s>(pData);
     }
 };
 

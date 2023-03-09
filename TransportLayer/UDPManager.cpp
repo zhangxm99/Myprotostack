@@ -100,5 +100,5 @@ int UDPManager::writeData(uint32_t dst, uint16_t selfport,uint16_t desport,uint8
     memcpy(buf + sizeof(pseudohdr) + sizeof(udp_hdr), data, len);
     ((udp_hdr*)(buf+sizeof(pseudohdr)))->check = checksum(buf, len + sizeof(udp_hdr) + sizeof(pseudohdr));
 
-    ipmgr.write(dst, buf + sizeof(pseudohdr), len + sizeof(udp_hdr));
+    ipmgr.write(dst,UDP, buf + sizeof(pseudohdr), len + sizeof(udp_hdr));
 }

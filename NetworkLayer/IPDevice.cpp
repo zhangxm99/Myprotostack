@@ -76,7 +76,7 @@ int IPDevice::transmit(uint32_t addr, uint8_t proto, uint8_t tos, char *payload,
         accumulateLen += roundMaxLen;
     }
 
-    id = (id+1) % UINT16_MAX;
+    id++;
     write_lock.unlock();
 }
 

@@ -10,16 +10,16 @@
 enum SOCK_UDP{};
 enum SOCK_TCP{};
 
-template<typename ProtoT>
+template<typename T>
 class Socket ;
 
 template<>
 class Socket<SOCK_UDP>{
 private:
-    UDPManager udpManager;
+    UDPManager& udpManager;
     uint16_t selfport;
 public:
-    Socket(IPManager &_ipmgr): udpManager(_ipmgr){}
+    Socket(UDPManager &_mgr): udpManager(_mgr),selfport(udpManager.applyPort()){}
 
     int sendto(uint8_t *data,int len,uint32_t destip,uint16_t destport){
         return udpManager.writeData(destip,selfport,destport,data,len);
@@ -35,6 +35,7 @@ public:
         return {ip,port};
     }
     void bind(uint16_t port){
+        if(udpManager.usePort(port) == -1) exit(1);
         selfport = port;
     }
 };
