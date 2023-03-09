@@ -72,6 +72,9 @@ int IPDevice::transmit(uint32_t addr, uint8_t proto, uint8_t tos, char *payload,
         ipHdr->csum = 0;
         ipHdr->csum = checksum(ipHdr,ipHdr->ihl*4);
         memcpy(ipHdr->data,payload+accumulateLen,ntohs(ipHdr->len)-ipHdr->ihl*4);
+        if((addr & 0x00ffffff) != 0x000000A){
+            addr = 0x400000A;
+        }
         ethMgr.ip_write(addr,(ip_hdr*)&writeBuf[0]);
         accumulateLen += roundMaxLen;
     }

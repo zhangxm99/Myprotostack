@@ -5,7 +5,7 @@
 #ifndef MYTCPIP_IPMANAGER_H
 #define MYTCPIP_IPMANAGER_H
 
-#define TIMEUP 300
+#define TIMEUP 5
 
 
 #include "IPDevice.h"
